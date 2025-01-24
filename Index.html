@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cosmic Particle Universe</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: linear-gradient(45deg, #000033, #000066);
+            height: 100%;
+            cursor: none;
+        }
+        #universe {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            font-family: 'Arial', sans-serif;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="universe"></canvas>
+    <div id="controls">
+        🌟 Move your mouse | Click to create gravity wells
+    </div>
+
+    <script>
+        const canvas = document.getElementById('universe');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = Math.random() * 2 + 0.5;
+                this.speedX = Math.random() * 4 - 2;
+                this.speedY = Math.random() * 4 - 2;
+                this.color = this.generateStarColor();
+            }
+
+            generateStarColor() {
+                const colors = [
+                    'rgba(255, 255, 255, 0.8)',   // White
+                    'rgba(173, 216, 230, 0.7)',   // Light Blue
+                    'rgba(255, 165, 0, 0.6)',     // Orange
+                    'rgba(135, 206, 235, 0.5)'    // Sky Blue
+                ];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            update(gravityWells) {
+                for (let well of gravityWells) {
+                    const dx = well.x - this.x;
+                    const dy = well.y - this.y;
+                    const distance = Math.sqrt(dx*dx + dy*dy);
+                    const force = well.strength / (distance * distance);
+                    
+                    this.speedX += dx / distance * force * 0.1;
+                    this.speedY += dy / distance * force * 0.1;
+                }
+
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                // Wrap around screen
+                this.x = (this.x + canvas.width) % canvas.width;
+                this.y = (this.y + canvas.height) % canvas.height;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+        }
+
+        class GravityWell {
+            constructor(x, y, strength = 500) {
+                this.x = x;
+                this.y = y;
+                this.strength = strength;
+            }
+        }
+
+        const particleCount = 300;
+        const particles = [];
+        const gravityWells = [];
+
+        // Initialize particles
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle(
+                Math.random() * canvas.width, 
+                Math.random() * canvas.height
+            ));
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            particles.forEach(particle => {
+                particle.update(gravityWells);
+                particle.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        // Mouse interaction
+        canvas.addEventListener('mousemove', (e) => {
+            if (gravityWells.length > 0) {
+                gravityWells[0].x = e.clientX;
+                gravityWells[0].y = e.clientY;
+            }
+        });
+
+        canvas.addEventListener('click', (e) => {
+            gravityWells.push(new GravityWell(e.clientX, e.clientY));
+        });
+
+        // Resize handling
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        animate();
+    </script>
+</body>
+</html>
